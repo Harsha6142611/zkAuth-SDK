@@ -1,0 +1,24 @@
+{
+  "name": "zkauth-sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A zero-knowledge proof authentication library",
+  "main": "src/index.js",
+  "keywords": [
+    "zero-knowledge",
+    "authentication",
+    "cryptography"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "crypto-js": "^4.0.0",
+    "elliptic": "^6.5.4"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
