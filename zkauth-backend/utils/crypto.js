@@ -1,7 +1,6 @@
 import { randomBytes } from 'crypto';
 import pkg from 'elliptic';
 const { ec: EC } = pkg;
-
 const ec = new EC('secp256k1');
 
 export class CryptoUtils {

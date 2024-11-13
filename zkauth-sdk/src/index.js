@@ -1,4 +1,2 @@
-// src/index.js
-import ZKAuth from './zkauth';
-
-export default ZKAuth;
+export { default as ZKAuth } from './zkauth.js';
+export { default as ZKAuthModal } from './components/ZKAuthModal.jsx';

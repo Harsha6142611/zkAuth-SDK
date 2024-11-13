@@ -1,6 +1,6 @@
 import { CryptoUtils } from './utils/crypto.js';
 
-export default class ZKAuth {
+class ZKAuth {
   constructor(config) {
     this.apiKey = config.apiKey;
     this.authUrl = config.authUrl;
@@ -130,3 +130,5 @@ export default class ZKAuth {
     }
   }
 }
+
+export default ZKAuth;
