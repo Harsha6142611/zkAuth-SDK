@@ -72,7 +72,7 @@ async function testLogin() {
 async function runTests() {
   console.log("Starting SDK tests...\n");
 
-  // await testRegistration();
+  await testRegistration();
   await testLogin();
 
   console.log("\nSDK tests completed.");
