@@ -1,51 +1,102 @@
-import crypto from 'crypto-js';
+import crypto from 'crypto';
+import User from '../models/User.js';
+import { CryptoUtils } from '../utils/crypto.js';
 
-// Mock in-memory storage (not recommended for production)
-const users = {};
-
-// Function to simulate ZKP (Zero-Knowledge Proof)
-function generateZKP(publicKey) {
-  return crypto.SHA256(publicKey).toString();  // This is a mock ZKP
+// Generate challenge for ZKP
+export async function getChallenge(req, res) {
+  console.log("Generating challenge...");
+  const challenge = CryptoUtils.generateChallenge();
+  res.json({ challenge });
 }
 
 // Registration function
-export function register(req, res) {
-  const { apiKey, publicKey } = req.body;
+export async function register(req, res) {
+  try {
+    const { apiKey, publicKey, proof, challenge } = req.body;
 
-  if (!apiKey || !publicKey) {
-    return res.status(400).json({ message: 'API Key and Public Key are required' });
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { apiKey },
+        { publicKey }
+      ]
+    });
+
+    if (existingUser) {
+      if (existingUser.apiKey === apiKey) {
+        return res.status(409).json({ 
+          message: 'API key already in use',
+          code: 'DUPLICATE_API_KEY'
+        });
+      }
+      if (existingUser.publicKey === publicKey) {
+        return res.status(409).json({ 
+          message: 'Public key already registered',
+          code: 'DUPLICATE_PUBLIC_KEY'
+        });
+      }
+    }
+
+    // Verify the proof
+    const isValid = await CryptoUtils.verifyProof(publicKey, proof, challenge);
+    if (!isValid) {
+      return res.status(400).json({ 
+        message: 'Invalid proof',
+        code: 'INVALID_PROOF'
+      });
+    }
+
+    // Create new user
+    const user = new User({
+      apiKey,
+      publicKey,
+      zkp: JSON.stringify(proof)
+    });
+
+    await user.save();
+    res.json({ 
+      message: 'User registered successfully',
+      code: 'REGISTRATION_SUCCESS'
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(400).json({ 
+      message: error.message,
+      code: 'REGISTRATION_ERROR'
+    });
   }
-
-  // Check if the user is already registered
-  if (users[publicKey]) {
-    return res.status(400).json({ message: 'User already registered' });
-  }
-
-  // Store user data in the mock database
-  users[publicKey] = { apiKey, zkp: generateZKP(publicKey) };
-
-  return res.status(200).json({ message: 'Registration successful', zkp: users[publicKey].zkp });
 }
 
 // Login function
-export function login(req, res) {
-  const { apiKey, publicKey } = req.body;
+export async function login(req, res) {
+  try {
+    const { apiKey, publicKey, proof, challenge } = req.body;
 
-  if (!apiKey || !publicKey) {
-    return res.status(400).json({ message: 'API Key and Public Key are required' });
+    // Find user by apiKey and publicKey
+    const user = await User.findOne({ apiKey, publicKey });
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Verify the proof
+    const isValid = await CryptoUtils.verifyProof(publicKey, proof, challenge);
+    if (!isValid) {
+      console.error('Proof verification failed:', {
+        publicKey: publicKey.substring(0, 10) + '...',
+        challenge: challenge.substring(0, 10) + '...'
+      });
+      return res.status(401).json({ message: 'Invalid proof' });
+    }
+
+    // Generate session token
+    const token = CryptoUtils.generateSessionToken();
+
+    res.json({
+      message: 'Login successful',
+      token
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(400).json({ message: error.message });
   }
-
-  // Verify if user is registered
-  const user = users[publicKey];
-  if (!user || user.apiKey !== apiKey) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
-
-  // Check ZKP (mock verification)
-  const zkp = generateZKP(publicKey);
-  if (zkp !== user.zkp) {
-    return res.status(401).json({ message: 'Authentication failed' });
-  }
-
-  return res.status(200).json({ message: 'Login successful', sessionToken: 'mock_session_token' });
 }

@@ -15,8 +15,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "bip39": "^3.1.0",
     "crypto-js": "^4.0.0",
-    "elliptic": "^6.5.4"
+    "elliptic": "^6.6.0",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "jest": "^29.7.0"
