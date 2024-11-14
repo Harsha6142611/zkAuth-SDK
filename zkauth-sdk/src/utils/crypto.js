@@ -1,6 +1,5 @@
-import { ec as EC } from 'elliptic';
-import * as bip39 from 'bip39';
-
+import pkg from 'elliptic';
+const { ec: EC } = pkg;
 const ec = new EC('secp256k1');
 
 export class CryptoUtils {
@@ -34,9 +33,9 @@ export class CryptoUtils {
       
       const keyPair = ec.keyFromPrivate(privateKey, 'hex');
       const publicKeyPoint = keyPair.getPublic();
-      const publicKey = '04' + 
-        publicKeyPoint.getX().toString('hex') + 
-        publicKeyPoint.getY().toString('hex');
+      
+      // Ensure public key is in uncompressed format (04 + x + y)
+      const publicKey = publicKeyPoint.encode('hex', false);
       
       return { privateKey, publicKey };
     } catch (error) {
@@ -66,10 +65,8 @@ export class CryptoUtils {
     try {
       const { privateKey } = await this.generateKeyPair(secretKey);
       const keyPair = ec.keyFromPrivate(privateKey, 'hex');
-      const msgHash = new Uint8Array(
-        challenge.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
-      );
-      const signature = keyPair.sign(msgHash);
+      const challengeHash = Buffer.from(challenge, 'hex');
+      const signature = keyPair.sign(challengeHash);
       
       return {
         r: signature.r.toString('hex'),
@@ -82,17 +79,15 @@ export class CryptoUtils {
 
   static verifyProofLocally(publicKey, proof, challenge) {
     try {
-      const formattedPublicKey = publicKey.startsWith('04') ? publicKey : '04' + publicKey;
-      const msgHash = new Uint8Array(
-        challenge.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
-      );
-      const key = ec.keyFromPublic(formattedPublicKey, 'hex');
-      return key.verify(msgHash, {
+      const key = ec.keyFromPublic(publicKey, 'hex');
+      const challengeHash = Buffer.from(challenge, 'hex');
+      return key.verify(challengeHash, {
         r: proof.r,
         s: proof.s
       });
     } catch (error) {
-      throw error;
+      console.error('Local proof verification error:', error);
+      return false;
     }
   }
 }

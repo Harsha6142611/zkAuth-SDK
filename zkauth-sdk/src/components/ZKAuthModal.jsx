@@ -51,7 +51,7 @@ const ZKAuthModal = ({
   onSuccess, 
   apiKey, 
 }) => {
-  const [mode, setMode] = useState('login'); // 'login' or 'register'
+  const [mode, setMode] = useState('login'); 
   const [secretKey, setSecretKey] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -62,6 +62,12 @@ const ZKAuthModal = ({
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (!secretKey.trim()) {
+      setError('Secret key is required');
+      setLoading(false);
+      return;
+    }
 
     try {
       const challenge = await zkAuth.getChallenge();

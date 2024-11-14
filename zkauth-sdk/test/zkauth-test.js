@@ -13,19 +13,13 @@ const config = {
 const zkAuth = new ZKAuth(config);
 
 async function testRegistration() {
-  console.log("--- Testing Registration ---");
-
   try {
-    console.log("Requesting challenge...");
     const challenge = await zkAuth.getChallenge();
-    console.log("Challenge received:", challenge);
-
-    // Try registration
     const result = await zkAuth.register(testApiKey, testSecretKey, challenge);
     console.log("Registration successful:", result);
   } catch (error) {
     if (error.message.includes('already registered')) {
-      console.log("Note: User already exists -", error.message);
+      console.log("Note: Secret key already registered -", error.message);
     } else {
       console.error("Registration Error:", error);
     }

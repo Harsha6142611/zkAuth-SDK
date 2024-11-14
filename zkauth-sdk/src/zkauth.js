@@ -49,11 +49,9 @@ class ZKAuth {
   // Register with the server
   async register(apiKey, secretKey, challenge) {
     try {
-      // Generate key pair and proof
       const keyPair = await CryptoUtils.generateKeyPair(secretKey);
       const proof = await CryptoUtils.createProof(secretKey, challenge);
 
-      // Verify proof locally first
       const isValidLocally = CryptoUtils.verifyProofLocally(keyPair.publicKey, proof, challenge);
       if (!isValidLocally) {
         throw new Error('Local proof verification failed');
@@ -76,10 +74,8 @@ class ZKAuth {
 
       if (!response.ok) {
         switch (data.code) {
-          case 'DUPLICATE_API_KEY':
-            throw new Error('This API key is already registered');
           case 'DUPLICATE_PUBLIC_KEY':
-            throw new Error('This public key is already registered');
+            throw new Error('This secret key is already registered');
           case 'INVALID_PROOF':
             throw new Error('Server rejected the proof');
           default:
@@ -100,7 +96,6 @@ class ZKAuth {
   // Login with the server
   async login(apiKey, publicKey, proof, challenge) {
     try {
-      // Verify proof locally first
       const isValidLocally = CryptoUtils.verifyProofLocally(publicKey, proof, challenge);
       if (!isValidLocally) {
         throw new Error('Local proof verification failed');

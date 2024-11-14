@@ -1,6 +1,6 @@
 {
   "name": "@harsha614261/zkauth-sdk",
-  "version": "1.1.1",
+  "version": "1.1.4",
   "type": "module",
   "description": "Zero Knowledge Authentication SDK for secure user authentication",
   "main": "dist/index.js",
@@ -45,18 +45,18 @@
     "privacy"
   ],
   "author": {
-    "name": "Your Name",
-    "email": "your.email@example.com"
+    "name": "Harsha Pasupula",
+    "email": "pasupulaharsha7006@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/zkauth-sdk.git"
+    "url": "git+https://github.com/Harsha6142611/zkAuth-SDK"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/yourusername/zkauth-sdk/issues"
+    "url": "https://github.com/Harsha6142611/zkAuth-SDK"
   },
-  "homepage": "https://github.com/yourusername/zkauth-sdk#readme",
+  "homepage": "https://github.com/Harsha6142611/zkAuth-SDK#readme",
   "engines": {
     "node": ">=14.0.0"
   }
