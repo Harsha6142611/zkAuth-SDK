@@ -11,17 +11,8 @@ export class CryptoUtils {
 
   static verifyProof(publicKey, proof, challenge) {
     try {
-      // Ensure public key starts with '04' for uncompressed format
-      const formattedPublicKey = publicKey.startsWith('04') ? publicKey : '04' + publicKey;
-      
-      console.log('Verifying proof with:', {
-        original: publicKey.substring(0, 10) + '...',
-        formatted: formattedPublicKey.substring(0, 10) + '...',
-        length: formattedPublicKey.length
-      });
-
+      const key = ec.keyFromPublic(publicKey, 'hex');
       const challengeHash = Buffer.from(challenge, 'hex');
-      const key = ec.keyFromPublic(formattedPublicKey, 'hex');
       
       const verificationResult = key.verify(challengeHash, {
         r: proof.r,

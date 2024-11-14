@@ -21,7 +21,6 @@ const ZKAuthTest = () => {
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleSuccess}
         apiKey="harsha614261"
-        authUrl="http://localhost:3000/auth"
       />
     </div>
   );

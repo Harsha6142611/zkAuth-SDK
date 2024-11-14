@@ -28,7 +28,16 @@ app.use((req, res, next) => {
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log('Connected to MongoDB'))
+.then(async () => {
+  console.log('Connected to MongoDB');
+  // Drop existing indexes and recreate them
+  try {
+    await mongoose.connection.collections.users.dropIndexes();
+    console.log('Dropped existing indexes');
+  } catch (err) {
+    console.log('No existing indexes to drop');
+  }
+})
 .catch((err) => console.error('MongoDB connection error:', err));
 
 // Handle MongoDB connection errors

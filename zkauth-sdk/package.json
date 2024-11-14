@@ -1,6 +1,6 @@
 {
   "name": "@harsha614261/zkauth-sdk",
-  "version": "1.1.4",
+  "version": "1.1.7",
   "type": "module",
   "description": "Zero Knowledge Authentication SDK for secure user authentication",
   "main": "dist/index.js",

@@ -18,5 +18,14 @@ export default defineConfig({
         }
       }
     }
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer'
+    }
+  },
+  define: {
+    'global': {},
+    'process.env': {}
   }
 });

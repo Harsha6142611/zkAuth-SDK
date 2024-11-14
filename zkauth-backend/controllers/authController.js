@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import User from '../models/User.js';
 import { CryptoUtils } from '../utils/crypto.js';
 
@@ -14,27 +13,14 @@ export async function register(req, res) {
   try {
     const { apiKey, publicKey, proof, challenge } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [
-        { apiKey },
-        { publicKey }
-      ]
-    });
+    // Only check for existing publicKey
+    const existingUser = await User.findOne({ publicKey });
 
     if (existingUser) {
-      if (existingUser.apiKey === apiKey) {
-        return res.status(409).json({ 
-          message: 'API key already in use',
-          code: 'DUPLICATE_API_KEY'
-        });
-      }
-      if (existingUser.publicKey === publicKey) {
-        return res.status(409).json({ 
-          message: 'Public key already registered',
-          code: 'DUPLICATE_PUBLIC_KEY'
-        });
-      }
+      return res.status(409).json({ 
+        message: 'Public key already registered',
+        code: 'DUPLICATE_PUBLIC_KEY'
+      });
     }
 
     // Verify the proof
@@ -60,6 +46,15 @@ export async function register(req, res) {
     });
   } catch (error) {
     console.error('Registration error:', error);
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      if (error.keyPattern.publicKey) {
+        return res.status(409).json({
+          message: 'Public key already registered',
+          code: 'DUPLICATE_PUBLIC_KEY'
+        });
+      }
+    }
     res.status(400).json({ 
       message: error.message,
       code: 'REGISTRATION_ERROR'
@@ -72,7 +67,7 @@ export async function login(req, res) {
   try {
     const { apiKey, publicKey, proof, challenge } = req.body;
 
-    // Find user by apiKey and publicKey
+    // Find user by both apiKey and publicKey
     const user = await User.findOne({ apiKey, publicKey });
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
@@ -81,10 +76,6 @@ export async function login(req, res) {
     // Verify the proof
     const isValid = await CryptoUtils.verifyProof(publicKey, proof, challenge);
     if (!isValid) {
-      console.error('Proof verification failed:', {
-        publicKey: publicKey.substring(0, 10) + '...',
-        challenge: challenge.substring(0, 10) + '...'
-      });
       return res.status(401).json({ message: 'Invalid proof' });
     }
 
@@ -93,7 +84,8 @@ export async function login(req, res) {
 
     res.json({
       message: 'Login successful',
-      token
+      token,
+      publicKey // Return publicKey for client reference
     });
   } catch (error) {
     console.error('Login error:', error);

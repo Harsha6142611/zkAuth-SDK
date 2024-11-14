@@ -1,6 +1,7 @@
 import pkg from 'elliptic';
 const { ec: EC } = pkg;
 const ec = new EC('secp256k1');
+import { Buffer } from 'buffer';
 
 export class CryptoUtils {
   // Browser-compatible challenge generation
@@ -65,8 +66,13 @@ export class CryptoUtils {
     try {
       const { privateKey } = await this.generateKeyPair(secretKey);
       const keyPair = ec.keyFromPrivate(privateKey, 'hex');
-      const challengeHash = Buffer.from(challenge, 'hex');
-      const signature = keyPair.sign(challengeHash);
+      
+      // Convert challenge hex string to Uint8Array using browser-compatible method
+      const challengeBytes = new Uint8Array(
+        challenge.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
+      
+      const signature = keyPair.sign(Buffer.from(challengeBytes));
       
       return {
         r: signature.r.toString('hex'),
@@ -80,8 +86,13 @@ export class CryptoUtils {
   static verifyProofLocally(publicKey, proof, challenge) {
     try {
       const key = ec.keyFromPublic(publicKey, 'hex');
-      const challengeHash = Buffer.from(challenge, 'hex');
-      return key.verify(challengeHash, {
+      
+      // Convert challenge hex string to Uint8Array
+      const challengeBytes = new Uint8Array(
+        challenge.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
+      
+      return key.verify(challengeBytes, {
         r: proof.r,
         s: proof.s
       });
