@@ -3,16 +3,15 @@ import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import { register, login, getChallenge } from './controllers/authController.js';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import { config } from './config/config.js';
 
 const app = express();
 
-// Middleware
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: process.env.NODE_ENV === 'production' 
+    ? config.server.cors.origins
+    : ['http://localhost:5173', 'http://localhost:3000'],
   methods: ['GET', 'POST'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -27,22 +26,26 @@ app.use((req, res, next) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-.then(async () => {
-  console.log('Connected to MongoDB');
-  // Drop existing indexes and recreate them
-  try {
-    await mongoose.connection.collections.users.dropIndexes();
-    console.log('Dropped existing indexes');
-  } catch (err) {
-    console.log('No existing indexes to drop');
-  }
-})
-.catch((err) => console.error('MongoDB connection error:', err));
+let cachedDb = null;
 
-// Handle MongoDB connection errors
-mongoose.connection.on('error', err => {
-  console.error('MongoDB connection error:', err);
+async function connectToDatabase() {
+  if (cachedDb) {
+    return cachedDb;
+  }
+  
+  const db = await mongoose.connect(config.mongodb.uri);
+  cachedDb = db;
+  return db;
+}
+
+// Update your routes to use the cached connection
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Routes
@@ -57,7 +60,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = config.server.port;
 app.listen(PORT, () => {
   console.log(`ZKAuth backend running on http://localhost:${PORT}`);
 });

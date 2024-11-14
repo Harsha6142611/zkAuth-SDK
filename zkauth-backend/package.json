@@ -5,6 +5,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "build": "npm install",
     "test": "mocha"
   },
   "keywords": [],
