@@ -50,13 +50,12 @@ const ZKAuthModal = ({
   onClose, 
   onSuccess, 
   apiKey, 
-  authUrl = 'http://localhost:3000/auth' 
 }) => {
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [secretKey, setSecretKey] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const authUrl = 'http://localhost:3000/auth' 
   const zkAuth = new ZKAuth({ apiKey, authUrl });
 
   const handleAuth = async (e) => {
