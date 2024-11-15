@@ -1,9 +1,21 @@
 import pkg from 'elliptic';
 const { ec: EC } = pkg;
 const ec = new EC('secp256k1');
-import { Buffer } from 'buffer';
+import * as bip39 from 'bip39';
+import { VaultManager } from './VaultManager';
+
+let BufferClass;
+try {
+  BufferClass = Buffer;
+} catch {
+  BufferClass = require('buffer').Buffer;
+}
 
 export class CryptoUtils {
+  constructor() {
+    this.vaultManager = new VaultManager();
+  }
+
   // Browser-compatible challenge generation
   static generateChallenge() {
     const array = new Uint8Array(32);
@@ -22,10 +34,10 @@ export class CryptoUtils {
       .join('');
   }
 
-  static async generateKeyPair(secretKey) {
+  static async generateKeyPair(password) {
     try {
       const encoder = new TextEncoder();
-      const data = encoder.encode(secretKey);
+      const data = encoder.encode(password);
       const hashBuffer = await crypto.subtle.digest('SHA-256', data);
       const privateKeyBytes = new Uint8Array(hashBuffer);
       const privateKey = Array.from(privateKeyBytes)
@@ -33,10 +45,10 @@ export class CryptoUtils {
         .join('');
       
       const keyPair = ec.keyFromPrivate(privateKey, 'hex');
-      const publicKeyPoint = keyPair.getPublic();
+      const publicKey = '04' + keyPair.getPublic('hex');
       
-      // Ensure public key is in uncompressed format (04 + x + y)
-      const publicKey = publicKeyPoint.encode('hex', false);
+      // Create vault with the generated private key
+      await this.vaultManager.createVault(privateKey, password);
       
       return { privateKey, publicKey };
     } catch (error) {
@@ -64,41 +76,108 @@ export class CryptoUtils {
 
   static async createProof(secretKey, challenge) {
     try {
-      const { privateKey } = await this.generateKeyPair(secretKey);
+      if (!this.vaultManager) {
+        this.vaultManager = new VaultManager();
+      }
+
+      const privateKey = await this.vaultManager.getPrivateKey();
+      if (!privateKey) {
+        throw new Error('No stored keys found. Please register first.');
+      }
+
       const keyPair = ec.keyFromPrivate(privateKey, 'hex');
-      
-      // Convert challenge hex string to Uint8Array using browser-compatible method
-      const challengeBytes = new Uint8Array(
-        challenge.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
-      );
-      
-      const signature = keyPair.sign(Buffer.from(challengeBytes));
+      const challengeBuffer = BufferClass.from(challenge, 'hex');
+      const signature = keyPair.sign(challengeBuffer);
       
       return {
         r: signature.r.toString('hex'),
-        s: signature.s.toString('hex')
+        s: signature.s.toString('hex'),
+        publicKey: '04' + keyPair.getPublic('hex')
       };
     } catch (error) {
+      console.error('Create proof error details:', error);
       throw new Error(`Failed to create proof: ${error.message}`);
     }
   }
 
   static verifyProofLocally(publicKey, proof, challenge) {
     try {
-      const key = ec.keyFromPublic(publicKey, 'hex');
+      const cleanPublicKey = publicKey.startsWith('04') ? publicKey.slice(2) : publicKey;
+      const key = ec.keyFromPublic(cleanPublicKey, 'hex');
       
-      // Convert challenge hex string to Uint8Array
-      const challengeBytes = new Uint8Array(
-        challenge.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
-      );
+      const challengeBuffer = BufferClass.from(challenge, 'hex');
       
-      return key.verify(challengeBytes, {
+      return key.verify(challengeBuffer, {
         r: proof.r,
         s: proof.s
       });
     } catch (error) {
       console.error('Local proof verification error:', error);
       return false;
+    }
+  }
+
+  // Add new methods for key management
+  static async getStoredPrivateKey() {
+    if (!this.vaultManager) {
+      this.vaultManager = new VaultManager();
+    }
+    return this.vaultManager.getPrivateKey();
+  }
+
+  static async getOrCreateKeyPair(secretKey) {
+    try {
+      const storedPrivateKey = await this.getStoredPrivateKey();
+      
+      if (storedPrivateKey) {
+        const keyPair = ec.keyFromPrivate(storedPrivateKey, 'hex');
+        const publicKey = '04' + keyPair.getPublic('hex');
+        return { privateKey: storedPrivateKey, publicKey };
+      }
+      
+      return this.generateKeyPair(secretKey);
+    } catch (error) {
+      return this.generateKeyPair(secretKey);
+    }
+  }
+
+  static clearStoredKeys() {
+    if (!this.vaultManager) {
+      this.vaultManager = new VaultManager();
+    }
+    this.vaultManager.lockVault();
+  }
+
+  static async createProofForRegistration(privateKey, challenge) {
+    try {
+      const keyPair = ec.keyFromPrivate(privateKey, 'hex');
+      
+      const challengeBuffer = BufferClass.from(challenge, 'hex');
+      const signature = keyPair.sign(challengeBuffer);
+      
+      return {
+        r: signature.r.toString('hex'),
+        s: signature.s.toString('hex')
+      };
+    } catch (error) {
+      throw new Error(`Failed to create registration proof: ${error.message}`);
+    }
+  }
+
+  // Add new methods for vault management
+  static async unlockVault(password) {
+    await this.vaultManager.unlockVault(password);
+  }
+
+  static lockVault() {
+    this.vaultManager.lockVault();
+  }
+
+  static vaultManager = new VaultManager();
+
+  static {
+    if (typeof window !== 'undefined') {
+      this.vaultManager = new VaultManager();
     }
   }
 }

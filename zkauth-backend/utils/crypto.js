@@ -11,10 +11,12 @@ export class CryptoUtils {
 
   static verifyProof(publicKey, proof, challenge) {
     try {
-      const key = ec.keyFromPublic(publicKey, 'hex');
-      const challengeHash = Buffer.from(challenge, 'hex');
+      const cleanPublicKey = publicKey.startsWith('04') ? publicKey.slice(2) : publicKey;
+      const key = ec.keyFromPublic(cleanPublicKey, 'hex');
       
-      const verificationResult = key.verify(challengeHash, {
+      const challengeBuffer = Buffer.from(challenge, 'hex');
+      
+      const verificationResult = key.verify(challengeBuffer, {
         r: proof.r,
         s: proof.s
       });

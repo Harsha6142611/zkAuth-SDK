@@ -4,6 +4,11 @@ dotenv.config();
 export const config = {
   mongodb: {
     uri: process.env.MONGO_URI || 'mongodb://localhost:27017/zkauth',
+    options: {
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      family: 4 // Force IPv4
+    }
   },
   server: {
     port: process.env.PORT || 3000,
@@ -11,7 +16,7 @@ export const config = {
       origins: process.env.CORS_ORIGINS ? 
         process.env.CORS_ORIGINS.split(',') : 
         ['http://localhost:5173'],
-      methods: ['GET', 'POST'],
+      methods: ['GET', 'POST']
     }
   }
 }; 

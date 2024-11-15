@@ -79,13 +79,19 @@ export async function login(req, res) {
       return res.status(401).json({ message: 'Invalid proof' });
     }
 
+    // Increment nonce
+    user.nonce += 1;
+    user.lastLogin = new Date();
+    await user.save();
+
     // Generate session token
     const token = CryptoUtils.generateSessionToken();
 
     res.json({
       message: 'Login successful',
       token,
-      publicKey // Return publicKey for client reference
+      publicKey,
+      nonce: user.nonce // Return nonce for client verification
     });
   } catch (error) {
     console.error('Login error:', error);

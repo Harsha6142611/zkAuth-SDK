@@ -55,8 +55,8 @@ const ZKAuthModal = ({
   const [secretKey, setSecretKey] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // const authUrl = 'http://localhost:3000/auth'
-  const authUrl = 'https://zk-auth-sdk-server.vercel.app/auth'
+  const authUrl = 'http://localhost:3000/auth'
+  // const authUrl = 'https://zk-auth-sdk-server.vercel.app/auth'
   const zkAuth = new ZKAuth({ apiKey, authUrl });
 
   const handleAuth = async (e) => {
@@ -77,13 +77,20 @@ const ZKAuthModal = ({
         const result = await zkAuth.register(apiKey, secretKey, challenge);
         onSuccess({ mode: 'register', ...result });
       } else {
-        const keyPair = await zkAuth.generateKeyPair(secretKey);
-        const proof = await zkAuth.createProof(secretKey, challenge);
-        const result = await zkAuth.login(apiKey, keyPair.publicKey, proof, challenge);
+        await zkAuth.unlock(secretKey);
+        const result = await zkAuth.login(apiKey, secretKey, challenge);
         onSuccess({ mode: 'login', ...result });
       }
     } catch (error) {
-      setError(error.message);
+      if (error.message.includes('No vault found')) {
+        setError('Please register first');
+      } else if (error.message.includes('Invalid secret key')) {
+        setError('Invalid secret key');
+      } else if (error.message.includes('Vault access denied')) {
+        setError('Access denied - please try again');
+      } else {
+        setError(error.message);
+      }
     } finally {
       setLoading(false);
     }

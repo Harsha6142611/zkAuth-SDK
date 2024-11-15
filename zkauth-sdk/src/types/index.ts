@@ -9,4 +9,16 @@ export interface AuthResponse {
   message: string;
   token: string;
   publicKey: string;
+}
+
+export interface ProofData {
+  r: string;
+  s: string;
+  publicKey: string;
+}
+
+export interface LoginParams {
+  apiKey: string;
+  secretKey: string;
+  challenge: string;
 } 
