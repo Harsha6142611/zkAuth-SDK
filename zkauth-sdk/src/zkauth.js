@@ -1,3 +1,6 @@
+import pkg from 'elliptic';
+const { ec: EC } = pkg;
+const ec = new EC('secp256k1');
 import { CryptoUtils } from './utils/crypto.js';
 
 class ZKAuth {
@@ -28,8 +31,9 @@ class ZKAuth {
 
   async unlock(password) {
     try {
-      await CryptoUtils.unlockVault(password);
+      const privateKey = await CryptoUtils.vaultManager.unlockVault(password);
       this.isUnlocked = true;
+      return privateKey;
     } catch (error) {
       throw new Error(`Failed to unlock vault: ${error.message}`);
     }
@@ -83,37 +87,48 @@ class ZKAuth {
   // Register with the server
   async register(apiKey, secretKey, challenge) {
     try {
-      // Generate key pair first
-      const keyPair = await CryptoUtils.generateKeyPair(secretKey);
+      // Generate recovery phrase and private key
+      const recoveryKit = await CryptoUtils.generateRecoveryKit();
+      
+      // Generate key pair from private key
+      const keyPair = ec.keyFromPrivate(recoveryKit.privateKey);
+      const publicKey = '04' + keyPair.getPublic('hex');
       
       // Create proof for registration
-      const proof = await CryptoUtils.createProofForRegistration(keyPair.privateKey, challenge);
+      const proof = await CryptoUtils.createProofForRegistration(
+        recoveryKit.privateKey, 
+        challenge
+      );
       
-      // Send registration request
+      // Register with server
       const response = await fetch(`${this.authUrl}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           apiKey,
-          publicKey: keyPair.publicKey,
+          publicKey,
           proof,
           challenge
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Registration failed');
+        throw new Error('Registration failed');
       }
 
-      // After successful registration, unlock the vault
-      await CryptoUtils.unlockVault(secretKey);
-      this.isUnlocked = true;
+      // Create vault with recovery phrase
+      await CryptoUtils.vaultManager.createVault(
+        recoveryKit.privateKey,
+        secretKey,
+        recoveryKit.recoveryPhrase
+      );
 
-      const result = await response.json();
       return {
-        ...result,
-        publicKey: keyPair.publicKey
+        success: true,
+        recoveryPhrase: recoveryKit.recoveryPhrase,
+        publicKey,
+        message: 'IMPORTANT: Save your recovery phrase in a secure location. ' +
+                 'You will need it to recover your account on other devices.'
       };
     } catch (error) {
       throw new Error(`Registration failed: ${error.message}`);
@@ -123,36 +138,26 @@ class ZKAuth {
   // Login with the server
   async login(apiKey, secretKey, challenge) {
     try {
-      if (!this.isUnlocked) {
-        throw new Error('Please unlock with your secret key first');
-      }
+      // First unlock the vault with the secret key
+      const privateKey = await this.unlock(secretKey);
       
-      const privateKey = await CryptoUtils.getStoredPrivateKey();
       if (!privateKey) {
-        throw new Error('Please register first');
+        throw new Error('Failed to unlock vault');
       }
-
-      // Create proof using stored private key
-      const proofData = await CryptoUtils.createProof(privateKey, challenge);
+      // Create proof using private key
+      const proof = await CryptoUtils.createProofForRegistration(privateKey, challenge);
       
-      // Verify locally before sending
-      const isValidLocally = CryptoUtils.verifyProofLocally(
-        proofData.publicKey, 
-        { r: proofData.r, s: proofData.s }, 
-        challenge
-      );
-      
-      if (!isValidLocally) {
-        throw new Error('Local proof verification failed');
-      }
+      // Generate public key
+      const keyPair = ec.keyFromPrivate(privateKey, 'hex');
+      const publicKey = '04' + keyPair.getPublic('hex');
 
       const response = await fetch(`${this.authUrl}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           apiKey,
-          publicKey: proofData.publicKey,
-          proof: { r: proofData.r, s: proofData.s },
+          publicKey,
+          proof,
           challenge
         })
       });
@@ -163,8 +168,10 @@ class ZKAuth {
       }
 
       const result = await response.json();
+      localStorage.setItem('zkauth_logged_in', 'true');
       return result;
     } catch (error) {
+      console.error('Login error:', error);
       throw new Error(`Login failed: ${error.message}`);
     }
   }
@@ -173,6 +180,64 @@ class ZKAuth {
   logout() {
     CryptoUtils.clearStoredKeys();
     localStorage.removeItem('zkauth_logged_in');
+  }
+
+  async recoverAccount(recoveryPhrase, newPassword) {
+    try {
+      const privateKey = await CryptoUtils.vaultManager.restoreFromRecoveryPhrase(
+        recoveryPhrase,
+        newPassword
+      );
+
+      const keyPair = ec.keyFromPrivate(privateKey);
+      const publicKey = '04' + keyPair.getPublic('hex');
+
+      await this.unlock(newPassword);
+      return { success: true, publicKey };
+    } catch (error) {
+      console.error('Recovery error:', error);
+      throw new Error(`Recovery failed: ${error.message}`);
+    }
+  }
+
+  async exportRecoveryPhrase(password) {
+    try {
+      return await CryptoUtils.vaultManager.exportRecoveryPhrase(password);
+    } catch (error) {
+      throw new Error(`Failed to export recovery phrase: ${error.message}`);
+    }
+  }
+
+  async importFromRecoveryPhrase(recoveryPhrase, newPassword) {
+    try {
+      // Validate recovery phrase format
+      if (!CryptoUtils.validateRecoveryPhrase(recoveryPhrase)) {
+        throw new Error('Invalid recovery phrase format');
+      }
+
+      // Restore account using recovery phrase
+      const result = await this.recoverAccount(recoveryPhrase, newPassword);
+      
+      // Get a challenge for login verification
+      const challenge = await this.getChallenge();
+      
+      // Attempt login to verify recovery worked
+      await this.login(this.apiKey, newPassword, challenge);
+      
+      return {
+        success: true,
+        publicKey: result.publicKey,
+        message: 'Account successfully imported'
+      };
+    } catch (error) {
+      throw new Error(`Import failed: ${error.message}`);
+    }
+  }
+
+  cleanup() {
+    document.removeEventListener('mousemove', this.resetTimer.bind(this));
+    document.removeEventListener('keypress', this.resetTimer.bind(this));
+    this.lock();
   }
 }
 

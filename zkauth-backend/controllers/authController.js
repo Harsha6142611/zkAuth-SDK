@@ -36,7 +36,8 @@ export async function register(req, res) {
     const user = new User({
       apiKey,
       publicKey,
-      zkp: JSON.stringify(proof)
+      nonce: 0,
+      lastLogin: new Date()
     });
 
     await user.save();
@@ -66,22 +67,33 @@ export async function register(req, res) {
 export async function login(req, res) {
   try {
     const { apiKey, publicKey, proof, challenge } = req.body;
+    console.log('Login attempt:', {
+      publicKey: publicKey.substring(0, 10) + '...',
+      challenge: challenge.substring(0, 10) + '...'
+    });
 
-    // Find user by both apiKey and publicKey
-    const user = await User.findOne({ apiKey, publicKey });
+    const user = await User.findOne({ publicKey });
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ 
+        message: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
     }
 
-    // Verify the proof
     const isValid = await CryptoUtils.verifyProof(publicKey, proof, challenge);
+    console.log('Proof verification result:', isValid);
+
     if (!isValid) {
-      return res.status(401).json({ message: 'Invalid proof' });
+      return res.status(401).json({ 
+        message: 'Invalid proof',
+        code: 'INVALID_PROOF'
+      });
     }
 
-    // Increment nonce
+    // Update user data
     user.nonce += 1;
     user.lastLogin = new Date();
+    user.apiKey = apiKey; // Update apiKey if changed
     await user.save();
 
     // Generate session token
@@ -89,12 +101,17 @@ export async function login(req, res) {
 
     res.json({
       message: 'Login successful',
+      code: 'LOGIN_SUCCESS',
       token,
       publicKey,
-      nonce: user.nonce // Return nonce for client verification
+      nonce: user.nonce,
+      expiresIn: 3600 // 1 hour token expiration
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ 
+      message: error.message,
+      code: 'LOGIN_ERROR'
+    });
   }
 }

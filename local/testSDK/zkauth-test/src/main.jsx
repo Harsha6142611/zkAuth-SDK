@@ -6,6 +6,6 @@ import ZKAuthTest from './ZKAuthTest';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ZKAuthTest />
+    <App/>
   </StrictMode>,
 )

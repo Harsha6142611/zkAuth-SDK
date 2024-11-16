@@ -29,10 +29,21 @@ app.get('/auth/challenge', getChallenge);
 app.post('/auth/register', authLimiter, register);
 app.post('/auth/login', authLimiter, login);
 
-// Error handling middleware
+// Add before the error handling middleware
+app.use((req, res, next) => {
+  res.status(404).json({
+    message: 'Route not found',
+    code: 'NOT_FOUND'
+  });
+});
+
+// Update error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal server error',
+    code: err.code || 'SERVER_ERROR'
+  });
 });
 
 // Handle graceful shutdown

@@ -7,8 +7,11 @@ export interface ZKAuthConfig {
 
 export interface AuthResponse {
   message: string;
+  code: string;
   token: string;
   publicKey: string;
+  nonce: number;
+  expiresIn: number;
 }
 
 export interface ProofData {

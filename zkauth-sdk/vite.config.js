@@ -10,22 +10,11 @@ export default defineConfig({
       fileName: (format) => `index.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
-      output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM'
-        }
-      }
-    }
-  },
-  resolve: {
-    alias: {
-      buffer: 'buffer'
+      external: ['react', 'react-dom', 'elliptic', 'bip39', 'buffer']
     }
   },
   define: {
-    'global': {},
-    'process.env': {}
+    'process.env': {},
+    global: 'globalThis'
   }
 });

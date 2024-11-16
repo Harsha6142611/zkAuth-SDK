@@ -3,17 +3,36 @@ const { ec: EC } = pkg;
 const ec = new EC('secp256k1');
 import * as bip39 from 'bip39';
 import { VaultManager } from './VaultManager';
+import { Buffer } from 'buffer';
 
-let BufferClass;
-try {
-  BufferClass = Buffer;
-} catch {
-  BufferClass = require('buffer').Buffer;
+// Ensure Buffer is available in browser environment
+if (typeof window !== 'undefined') {
+  window.Buffer = window.Buffer || Buffer;
 }
+// Remove the try-catch block (lines 8-12) and replace with direct Buffer assignment
+const BufferClass = Buffer;
 
 export class CryptoUtils {
-  constructor() {
-    this.vaultManager = new VaultManager();
+  static vaultManager = new VaultManager();
+
+  static async getStoredPrivateKey() {
+    return this.vaultManager.getPrivateKey();
+  }
+
+  static async createProofForRegistration(privateKey, challenge) {
+    try {
+      const keyPair = ec.keyFromPrivate(privateKey, 'hex');
+      const challengeBuffer = Buffer.from(challenge, 'hex');
+      const signature = keyPair.sign(challengeBuffer);
+      
+      return {
+        r: signature.r.toString('hex'),
+        s: signature.s.toString('hex')
+      };
+    } catch (error) {
+      console.error('Proof creation error:', error);
+      throw new Error(`Failed to create registration proof: ${error.message}`);
+    }
   }
 
   // Browser-compatible challenge generation
@@ -56,21 +75,14 @@ export class CryptoUtils {
     }
   }
 
-  static generateRecoveryPhrase() {
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    const entropy = Array.from(array)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    return bip39.entropyToMnemonic(entropy);
-  }
-
   static async recoverFromPhrase(recoveryPhrase) {
+    if (!bip39.validateMnemonic(recoveryPhrase)) {
+      throw new Error('Invalid recovery phrase');
+    }
+    
     const seed = await bip39.mnemonicToSeed(recoveryPhrase);
-    const keyPair = ec.keyFromPrivate(seed.slice(0, 32));
     return {
-      privateKey: keyPair.getPrivate('hex'),
-      publicKey: '04' + keyPair.getPublic('hex')
+      privateKey: seed.slice(0, 32).toString('hex')
     };
   }
 
@@ -118,13 +130,6 @@ export class CryptoUtils {
   }
 
   // Add new methods for key management
-  static async getStoredPrivateKey() {
-    if (!this.vaultManager) {
-      this.vaultManager = new VaultManager();
-    }
-    return this.vaultManager.getPrivateKey();
-  }
-
   static async getOrCreateKeyPair(secretKey) {
     try {
       const storedPrivateKey = await this.getStoredPrivateKey();
@@ -148,22 +153,6 @@ export class CryptoUtils {
     this.vaultManager.lockVault();
   }
 
-  static async createProofForRegistration(privateKey, challenge) {
-    try {
-      const keyPair = ec.keyFromPrivate(privateKey, 'hex');
-      
-      const challengeBuffer = BufferClass.from(challenge, 'hex');
-      const signature = keyPair.sign(challengeBuffer);
-      
-      return {
-        r: signature.r.toString('hex'),
-        s: signature.s.toString('hex')
-      };
-    } catch (error) {
-      throw new Error(`Failed to create registration proof: ${error.message}`);
-    }
-  }
-
   // Add new methods for vault management
   static async unlockVault(password) {
     await this.vaultManager.unlockVault(password);
@@ -173,11 +162,28 @@ export class CryptoUtils {
     this.vaultManager.lockVault();
   }
 
-  static vaultManager = new VaultManager();
+  static async generateRecoveryKit() {
+    const recoveryPhrase = bip39.generateMnemonic(256); // 24 words for better security
+    const seed = await bip39.mnemonicToSeed(recoveryPhrase);
+    const privateKey = seed.slice(0, 32).toString('hex');
+    
+    return {
+      recoveryPhrase,
+      privateKey
+    };
+  }
 
-  static {
-    if (typeof window !== 'undefined') {
-      this.vaultManager = new VaultManager();
+  static async restoreFromRecoveryPhrase(recoveryPhrase) {
+    if (!bip39.validateMnemonic(recoveryPhrase)) {
+      throw new Error('Invalid recovery phrase');
     }
+    
+    const seed = await bip39.mnemonicToSeed(recoveryPhrase);
+    return seed.slice(0, 32).toString('hex');
+  }
+
+  static validateRecoveryPhrase(recoveryPhrase) {
+    return bip39.validateMnemonic(recoveryPhrase);
   }
 }
+
