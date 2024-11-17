@@ -24,4 +24,18 @@ export interface LoginParams {
   apiKey: string;
   secretKey: string;
   challenge: string;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: UserInfo | null;
+}
+
+export interface UserInfo {
+  publicKey: string;
+  lastLogin: string;
+}
+
+export interface AuthStateListener {
+  (authState: AuthState): void;
 } 

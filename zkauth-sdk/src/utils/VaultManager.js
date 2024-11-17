@@ -10,7 +10,7 @@ export class VaultManager {
     this.db = null;
     this.unlockedPrivateKey = null;
     this.lastActivity = null;
-    this.timeoutDuration = 15 * 60 * 1000;
+    this.timeoutDuration = 1 * 60 * 1000;
   }
 
   async initDB() {

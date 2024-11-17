@@ -302,7 +302,7 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
                 type="submit"
                 colorScheme="blue"
                 size="lg"
-                height="56px"
+                height="50px"
                 isLoading={loading}
                 loadingText="Processing..."
                 borderRadius="full"

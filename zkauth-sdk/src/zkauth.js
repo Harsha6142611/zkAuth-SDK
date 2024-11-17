@@ -19,11 +19,32 @@ class ZKAuth {
   resetTimer() {
     if (this.isUnlocked) {
       try {
-        CryptoUtils.getStoredPrivateKey(); // This updates last activity
+        // Update last activity timestamp
+        CryptoUtils.vaultManager.updateActivity();
+        
+        // Check if session is still valid
+        if (!CryptoUtils.vaultManager.checkSession()) {
+          this.isUnlocked = false;
+          localStorage.removeItem('zkauth_logged_in');
+          
+          // Notify any listeners about the session expiration
+          if (this.authStateListeners) {
+            this.notifyAuthStateChange();
+          }
+          
+          // Optional: Trigger a custom event for session expiration
+          const event = new CustomEvent('zkauth_session_expired');
+          window.dispatchEvent(event);
+        }
       } catch (error) {
         if (error.message === 'Session expired') {
           this.isUnlocked = false;
-          // Trigger UI update or notification
+          localStorage.removeItem('zkauth_logged_in');
+          
+          // Notify listeners about session expiration
+          if (this.authStateListeners) {
+            this.notifyAuthStateChange();
+          }
         }
       }
     }
