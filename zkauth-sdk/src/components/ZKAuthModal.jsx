@@ -20,6 +20,7 @@ import {
   useMediaQuery,
 } from '@chakra-ui/react';
 import { ZKAuth } from '../index.js';
+import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 
 const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
   const [mode, setMode] = useState('login');
@@ -34,6 +35,8 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const [isSmallScreen] = useMediaQuery('(max-width: 768px)');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRecoveryInput, setShowRecoveryInput] = useState(false);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -68,6 +71,15 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTabChange = (index) => {
+    const newMode = ['login', 'register', 'import'][index];
+    setMode(newMode);
+    setSecretKey('');
+    setRecoveryPhrase('');
+    setError('');
+    setShowRecoveryPhrase(false);
   };
 
   return (
@@ -111,7 +123,7 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
           <Tabs 
             isFitted 
             variant="soft-rounded" 
-            onChange={(index) => setMode(['login', 'register', 'import'][index])}
+            onChange={handleTabChange}
             defaultIndex={['login', 'register', 'import'].indexOf(mode)}
             w="full"
             mt={20}
@@ -126,8 +138,8 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
             >
               <Tab 
                 _selected={{ 
-                  color: 'white', 
-                  bg: 'blue.500',
+                  color: 'black', 
+                  bg: 'white',
                   transform: 'translateY(-2px)',
                   boxShadow: 'md'
                 }}
@@ -140,8 +152,8 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
               </Tab>
               <Tab 
                 _selected={{ 
-                  color: 'white', 
-                  bg: 'blue.500',
+                  color: 'black', 
+                  bg: 'white',
                   transform: 'translateY(-2px)',
                   boxShadow: 'md'
                 }}
@@ -154,8 +166,8 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
               </Tab>
               <Tab 
                 _selected={{ 
-                  color: 'white', 
-                  bg: 'blue.500',
+                  color: 'black', 
+                  bg: 'white',
                   transform: 'translateY(-2px)',
                   boxShadow: 'md'
                 }}
@@ -179,15 +191,58 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
           <form onSubmit={handleAuth}>
             <VStack spacing={6} align="stretch">
               {mode === 'import' && (
+                <Box position="relative" w="70%" mx="auto">
+                  <Input
+                    type={showRecoveryInput ? "text" : "password"}
+                    placeholder="Enter Recovery Phrase"
+                    value={recoveryPhrase}
+                    onChange={(e) => setRecoveryPhrase(e.target.value)}
+                    size="lg"
+                    height="50px"
+                    w="70%"
+                    mx="auto"
+                    fontSize="md"
+                    mt={30}
+                    mb={-20}
+                    borderRadius="10px"
+                    borderWidth="2px"
+                    _focus={{
+                      borderColor: 'blue.400',
+                      boxShadow: '0 0 0 1px blue.400'
+                    }}
+                    _hover={{
+                      borderColor: 'gray.300'
+                    }}
+                    px={6}
+                  />
+                  <Button
+                    position="absolute"
+                    right="2"
+                    top="50%"
+                    mt={20}
+                    transform="translateY(-50%)"
+                    variant="ghost"
+                    onClick={() => setShowRecoveryInput(!showRecoveryInput)}
+                    size="sm"
+                  >
+                    {showRecoveryInput ? <ViewOffIcon /> : <ViewIcon />}
+                  </Button>
+                </Box>
+              )}
+
+              <Box position="relative" w="70%" mx="auto">
                 <Input
-                  placeholder="Enter Recovery Phrase"
-                  value={recoveryPhrase}
-                  onChange={(e) => setRecoveryPhrase(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  placeholder={mode === 'import' ? 'New Password' : 'Secret Key'}
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value)}
                   size="lg"
-                  height="56px"
+                  height="50px"
+                  w="70%"
+                  mx="auto"
                   fontSize="md"
                   mt={30}
-                  mb={-20}
+                  mb={10}
                   borderRadius="10px"
                   borderWidth="2px"
                   _focus={{
@@ -199,29 +254,19 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
                   }}
                   px={6}
                 />
-              )}
-
-              <Input
-                type="password"
-                placeholder={mode === 'import' ? 'New Password' : 'Secret Key'}
-                value={secretKey}
-                onChange={(e) => setSecretKey(e.target.value)}
-                size="lg"
-                height="56px"
-                fontSize="md"
-                mt={30}
-                mb={10}
-                borderRadius="10px"
-                borderWidth="2px"
-                _focus={{
-                  borderColor: 'blue.400',
-                  boxShadow: '0 0 0 1px blue.400'
-                }}
-                _hover={{
-                  borderColor: 'gray.300'
-                }}
-                px={6}
-              />
+                <Button
+                  position="absolute"
+                  right="2"
+                  top="50%"
+                  mt={10}
+                  transform="translateY(-50%)"
+                  variant="ghost"
+                  onClick={() => setShowPassword(!showPassword)}
+                  size="sm"
+                >
+                  {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                </Button>
+              </Box>
 
               {error && (
                 <Alert status="error" borderRadius="full">
@@ -261,11 +306,17 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
                 isLoading={loading}
                 loadingText="Processing..."
                 borderRadius="full"
+                w="30%"
+                mx="auto"
                 fontSize="md"
                 fontWeight="semibold"
                 _hover={{
                   transform: 'translateY(-1px)',
-                  boxShadow: 'lg'
+                  boxShadow: 'lg',
+                  bg: 'white',
+                  color: 'black',
+                  borderWidth: '2px',
+                  borderColor: 'blue.500'
                 }}
               >
                 {mode === 'login' ? 'Login' : mode === 'register' ? 'Register' : 'Import'}
@@ -296,7 +347,10 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
             fontWeight="semibold"
             _hover={{
               transform: 'translateY(-1px)',
-              boxShadow: 'md'
+              boxShadow: 'md',
+              bg: 'white',
+              color: 'black',
+              borderWidth: '2px'
             }}
           >
             Close

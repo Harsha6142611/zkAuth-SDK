@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import './App.css';
-// import { ZKAuthModal } from '../../../../zkauth-sdk/src/index.js';
+import { ZKAuthModal } from '../../../../zkauth-sdk/src/index.js';
 
-import { ZKAuthModal } from '@harsha614261/zkauth-sdk';
+// import { ZKAuthModal } from '@harsha614261/zkauth-sdk';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
