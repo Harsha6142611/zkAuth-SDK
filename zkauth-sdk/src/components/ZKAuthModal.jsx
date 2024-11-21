@@ -22,7 +22,7 @@ import {
 import { ZKAuth } from '../index.js';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 
-const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
+const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
   const [mode, setMode] = useState('login');
   const [secretKey, setSecretKey] = useState('');
   const [recoveryPhrase, setRecoveryPhrase] = useState('');
@@ -52,22 +52,29 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
 
     try {
       const challenge = await zkAuth.getChallenge();
+      let result;
       
       if (mode === 'register') {
-        const result = await zkAuth.register(apiKey, secretKey, challenge);
+        result = await zkAuth.register(apiKey, secretKey, challenge);
         setRecoveryPhrase(result.recoveryPhrase);
         setShowRecoveryPhrase(true);
-        onSuccess({ mode: 'register', ...result });
       } else if (mode === 'import') {
-        const result = await zkAuth.importFromRecoveryPhrase(recoveryPhrase, secretKey);
-        onSuccess({ mode: 'import', ...result });
+        result = await zkAuth.importFromRecoveryPhrase(recoveryPhrase, secretKey);
       } else {
         await zkAuth.unlock(secretKey);
-        const result = await zkAuth.login(apiKey, secretKey, challenge);
-        onSuccess({ mode: 'login', ...result });
+        result = await zkAuth.login(apiKey, secretKey, challenge);
+      }
+
+      onSuccess({ mode, ...result });
+
+      if (redirectUrl && (mode === 'login' || mode === 'import')) {
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 500);
       }
     } catch (error) {
-      setError(error.message);
+      console.error('Full error:', error);
+      setError(error.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -218,7 +225,7 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
                   <Button
                     position="absolute"
                     right="2"
-                    top="50%"
+                    top="-35%"
                     mt={20}
                     transform="translateY(-50%)"
                     variant="ghost"
@@ -257,7 +264,7 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
                 <Button
                   position="absolute"
                   right="2"
-                  top="50%"
+                  top="12%"
                   mt={10}
                   transform="translateY(-50%)"
                   variant="ghost"
@@ -359,6 +366,10 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey }) => {
       </ModalContent>
     </Modal>
   );
+};
+
+ZKAuthModal.defaultProps = {
+  redirectUrl: null,
 };
 
 export default ZKAuthModal;

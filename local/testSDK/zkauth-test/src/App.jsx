@@ -1,56 +1,81 @@
-import { useState } from 'react';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import { ChakraProvider, Button } from '@chakra-ui/react';
 import { ZKAuthModal } from '../../../../zkauth-sdk/src/index.js';
-
-// import { ZKAuthModal } from '@harsha614261/zkauth-sdk';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [authStatus, setAuthStatus] = useState(null);
+  const [authResult, setAuthResult] = useState(null);
+
+  useEffect(() => {
+    const storedAuthData = localStorage.getItem('zkauth_result');
+    if (storedAuthData) {
+      setAuthResult(JSON.parse(storedAuthData));
+    }
+  }, []);
 
   const handleAuthSuccess = (result) => {
-    setAuthStatus(result);
+    console.log('Authentication successful:', result);
+    localStorage.setItem('zkauth_result', JSON.stringify(result));
+    setAuthResult(result);
     setIsModalOpen(false);
-    alert(`Authentication Successful: Mode - ${result.mode}`);
+  };
+
+  const renderAuthStatus = (result) => {
+    return (
+      <div className="auth-status">
+        <div className="mode-badge">{result.mode}</div>
+        <div className="status-header">Authentication Successful</div>
+        
+        {result.publicKey && (
+          <div className="status-item">
+            <div className="status-label">Public Key:</div>
+            <div className="public-key">{result.publicKey}</div>
+          </div>
+        )}
+        
+        {result.recoveryPhrase && (
+          <div className="status-item">
+            <div className="status-label">Recovery Phrase:</div>
+            <div className="recovery-phrase">{result.recoveryPhrase}</div>
+          </div>
+        )}
+
+        <Button 
+          onClick={() => {
+            localStorage.removeItem('zkauth_result');
+            setAuthResult(null);
+          }}
+          mt={4}
+          colorScheme="red"
+        >
+          Logout
+        </Button>
+      </div>
+    );
   };
 
   return (
-    <div className="app-container">
-      <div className="content-container">
-        <h1>ZKAuth Demo</h1>
-        
-        <button 
-          className="auth-button"
-          onClick={() => setIsModalOpen(true)}
-        >
-          Open Auth Modal
-        </button>
+    <ChakraProvider>
+      <div className="app-container">
+        <div className="content-container">
+          {!authResult && (
+            <Button onClick={() => setIsModalOpen(true)}>
+              Login
+            </Button>
+          )}
 
-        {authStatus && (
-          <div className="auth-status">
-            <strong style={{color: 'black'}}>Authentication Status:</strong>
-            <p style={{color: 'black'}}>Mode: {authStatus.mode}</p>
-            {authStatus.publicKey && (
-              <p className="public-key">
-                Public Key: {authStatus.publicKey}
-              </p>
-            )}
-            {authStatus.recoveryPhrase && (
-              <p className="recovery-phrase">
-                Recovery Phrase: {authStatus.recoveryPhrase}
-              </p>
-            )}
-          </div>
-        )}
+          {authResult && renderAuthStatus(authResult)}
+
+          <ZKAuthModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={handleAuthSuccess}
+            apiKey="your-api-key-here"
+            redirectUrl="http://localhost:5173/auth/user"
+          />
+        </div>
       </div>
-
-      <ZKAuthModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleAuthSuccess}
-        apiKey="your-api-key-here" // Replace with your actual API key
-      />
-    </div>
+    </ChakraProvider>
   );
 }
 

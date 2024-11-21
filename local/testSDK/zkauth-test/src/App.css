@@ -76,34 +76,82 @@
 .auth-status {
   padding: 24px;
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   width: 100%;
   margin-top: 20px;
   color: black;
+}
+
+.status-header {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: #2B6CB0;
+}
+
+.status-item {
+  margin: 12px 0;
+  padding: 12px;
+  background-color: #F7FAFC;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+}
+
+.status-label {
+  font-weight: 600;
+  color: #4A5568;
+  margin-bottom: 4px;
 }
 
 .public-key {
   margin-top: 8px;
   font-size: 14px;
   word-break: break-all;
-  color: black;
+  color: #2D3748;
+  padding: 8px;
+  background-color: #EDF2F7;
+  border-radius: 6px;
 }
 
 .recovery-phrase {
   margin-top: 8px;
   font-size: 14px;
   word-break: break-all;
-  color: red;
+  color: #E53E3E;
+  padding: 12px;
+  background-color: #FFF5F5;
+  border: 1px solid #FED7D7;
+  border-radius: 6px;
+}
+
+.mode-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #2B6CB0;
+  color: white;
+  margin-bottom: 16px;
 }
 
 @media (max-width: 768px) {
-  .auth-button {
-    font-size: 14px;
-    padding: 8px 16px;
-  }
-
   .auth-status {
     padding: 16px;
+    margin-top: 16px;
+  }
+
+  .status-header {
+    font-size: 18px;
+  }
+
+  .status-item {
+    padding: 8px;
+  }
+
+  .public-key,
+  .recovery-phrase {
+    font-size: 12px;
   }
 }
