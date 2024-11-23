@@ -39,7 +39,7 @@ const Documentation = () => {
 
   return (
     <div className="documentation-container">
-      {/* Left Sidebar - Topics */}
+      
       <div className="docs-sidebar">
         <nav>
           {Object.entries(topics).map(([key, topic]) => (
@@ -54,7 +54,7 @@ const Documentation = () => {
         </nav>
       </div>
 
-      {/* Middle Content */}
+      
       <div className="docs-content">
         <h1>{topics[selectedTopic].title}</h1>
         <div className="content-body">
@@ -62,7 +62,7 @@ const Documentation = () => {
         </div>
       </div>
 
-      {/* Right Sidebar - Subtopics */}
+      
       <div className="docs-subtopics">
         <h3>In This Section</h3>
         <nav>
