@@ -225,7 +225,7 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
                   <Button
                     position="absolute"
                     right="2"
-                    top="-35%"
+                    top="55%"
                     mt={20}
                     transform="translateY(-50%)"
                     variant="ghost"
@@ -264,7 +264,7 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
                 <Button
                   position="absolute"
                   right="2"
-                  top="12%"
+                  top="50%"
                   mt={10}
                   transform="translateY(-50%)"
                   variant="ghost"
