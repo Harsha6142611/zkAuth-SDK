@@ -4,50 +4,53 @@ const ec = new EC('secp256k1');
 import { CryptoUtils } from './utils/crypto.js';
 
 class ZKAuth {
-  constructor({ apiKey, authUrl }) {
+  constructor({ apiKey, authUrl, sessionConfig }) {
     this.apiKey = apiKey;
     this.authUrl = authUrl || 'http://localhost:3000/auth';
     this.isUnlocked = false;
+    this.authStateListeners = new Set();
+    
+    // Configure session timeout
+    if (sessionConfig) {
+      CryptoUtils.vaultManager.setSessionConfig({
+        timeoutDuration: sessionConfig.timeoutDuration || 10 * 60 * 1000,
+        onSessionExpired: () => {
+          this.handleSessionExpired();
+        }
+      });
+    }
+    
     this.setupInactivityTimer();
   }
 
   setupInactivityTimer() {
-    document.addEventListener('mousemove', this.resetTimer.bind(this));
-    document.addEventListener('keypress', this.resetTimer.bind(this));
+    const resetTimer = () => {
+      if (this.isUnlocked) {
+        CryptoUtils.vaultManager.updateActivity();
+      }
+    };
+
+    // Add more event listeners for better activity tracking
+    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+      document.addEventListener(event, resetTimer);
+    });
   }
 
-  resetTimer() {
-    if (this.isUnlocked) {
-      try {
-        // Update last activity timestamp
-        CryptoUtils.vaultManager.updateActivity();
-        
-        // Check if session is still valid
-        if (!CryptoUtils.vaultManager.checkSession()) {
-          this.isUnlocked = false;
-          localStorage.removeItem('zkauth_logged_in');
-          
-          // Notify any listeners about the session expiration
-          if (this.authStateListeners) {
-            this.notifyAuthStateChange();
-          }
-          
-          // Optional: Trigger a custom event for session expiration
-          const event = new CustomEvent('zkauth_session_expired');
-          window.dispatchEvent(event);
-        }
-      } catch (error) {
-        if (error.message === 'Session expired') {
-          this.isUnlocked = false;
-          localStorage.removeItem('zkauth_logged_in');
-          
-          // Notify listeners about session expiration
-          if (this.authStateListeners) {
-            this.notifyAuthStateChange();
-          }
-        }
-      }
-    }
+  handleSessionExpired() {
+    this.isUnlocked = false;
+    localStorage.removeItem('zkauth_logged_in');
+    
+    // Notify listeners about session expiration
+    this.notifyAuthStateChange();
+    
+    // Dispatch session expired event
+    const event = new CustomEvent('zkauth_session_expired');
+    window.dispatchEvent(event);
+  }
+
+  // Add this method to allow runtime configuration updates
+  updateSessionConfig(config) {
+    CryptoUtils.vaultManager.setSessionConfig(config);
   }
 
   async unlock(password) {
