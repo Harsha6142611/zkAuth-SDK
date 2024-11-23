@@ -10,7 +10,37 @@ export class VaultManager {
     this.db = null;
     this.unlockedPrivateKey = null;
     this.lastActivity = null;
-    this.timeoutDuration = 1 * 60 * 1000;
+    this.timeoutDuration = 10 * 60 * 1000;
+    this.timeoutWarning = null;
+    this.onSessionExpired = null;
+  }
+
+  setSessionConfig(config = {}) {
+    if (config.timeoutDuration) {
+      this.timeoutDuration = config.timeoutDuration;
+    }
+    if (config.onSessionExpired) {
+      this.onSessionExpired = config.onSessionExpired;
+    }
+  }
+
+  startSessionTimer() {
+    this.lastActivity = Date.now();
+    this.clearTimeoutWarning();
+    
+    this.timeoutWarning = setTimeout(() => {
+      this.lockVault();
+      if (this.onSessionExpired) {
+        this.onSessionExpired();
+      }
+    }, this.timeoutDuration);
+  }
+
+  clearTimeoutWarning() {
+    if (this.timeoutWarning) {
+      clearTimeout(this.timeoutWarning);
+      this.timeoutWarning = null;
+    }
   }
 
   async initDB() {
@@ -146,6 +176,7 @@ export class VaultManager {
 
   updateActivity() {
     this.lastActivity = Date.now();
+    this.startSessionTimer();
   }
 
   async restoreFromRecoveryPhrase(recoveryPhrase, newPassword) {
