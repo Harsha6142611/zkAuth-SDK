@@ -20,7 +20,7 @@ const Home = () => {
   return (
     <main>
       <div className="flex">
-        {/* Left side content */}
+        
         <div className="w-1/2 left-content" style={{ backgroundColor: '#f8f9fa' }}>
           <div className="hero-section">
             <div className="container">
@@ -53,7 +53,7 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Right side panel */}
+        
         <div className="w-1/2">
           <RightPanel />
         </div>
