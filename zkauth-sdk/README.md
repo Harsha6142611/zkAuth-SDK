@@ -78,6 +78,7 @@ Run the following command to install the package:
 
 ```bash
 npm i @harsha614261/zkauth
+```
 
 ## 🖥️ Running the Demo Locally
 
@@ -86,3 +87,26 @@ npm i @harsha614261/zkauth
 ```bash
 git clone https://github.com/your-username/ZKP-Authentication.git
 cd ZKP-Authentication
+```
+
+```bash
+npm install
+```
+
+## 📖 Future Enhancements
+
+- **Multi-Factor Authentication**: Combine ZKP with additional security layers for enhanced protection.  
+- **Biometric Integration**: Use biometric data securely with ZKP.  
+- **Decentralized Storage**: Integrate decentralized vault solutions for storing user data.  
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please feel free to:
+
+- **Report issues**  
+- **Submit feature requests**  
+- **Contribute code improvements**  
+
+Fork the repository and open a pull request to contribute.
