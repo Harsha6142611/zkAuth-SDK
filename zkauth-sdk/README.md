@@ -78,3 +78,11 @@ Run the following command to install the package:
 
 ```bash
 npm i @harsha614261/zkauth
+
+## 🖥️ Running the Demo Locally
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/your-username/ZKP-Authentication.git
+cd ZKP-Authentication
