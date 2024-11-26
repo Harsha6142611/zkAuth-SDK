@@ -93,6 +93,7 @@ cd ZKP-Authentication
 npm install
 ```
 
+
 ## 📖 Future Enhancements
 
 - **Multi-Factor Authentication**: Combine ZKP with additional security layers for enhanced protection.  
