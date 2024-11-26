@@ -77,8 +77,10 @@ This project is available as an npm package for developers to integrate easily i
 Run the following command to install the package:
 
 ```bash
-npm i @harsha614261/zkauth
+npm i @harsha614261/zkauth-sdk
 ```
+
+Check in the npmjs https://www.npmjs.com/package/@harsha614261/zkauth-sdk
 
 ## 🖥️ Running the Demo Locally
 
