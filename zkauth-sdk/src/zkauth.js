@@ -9,8 +9,7 @@ class ZKAuth {
     this.authUrl = authUrl || 'http://localhost:3000/auth';
     this.isUnlocked = false;
     this.authStateListeners = new Set();
-    
-    // Configure session timeout
+ 
     if (sessionConfig) {
       CryptoUtils.vaultManager.setSessionConfig({
         timeoutDuration: sessionConfig.timeoutDuration || 10 * 60 * 1000,
@@ -30,7 +29,7 @@ class ZKAuth {
       }
     };
 
-    // Add more event listeners for better activity tracking
+   
     ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
       document.addEventListener(event, resetTimer);
     });
@@ -39,16 +38,14 @@ class ZKAuth {
   handleSessionExpired() {
     this.isUnlocked = false;
     localStorage.removeItem('zkauth_logged_in');
-    
-    // Notify listeners about session expiration
     this.notifyAuthStateChange();
     
-    // Dispatch session expired event
+    
     const event = new CustomEvent('zkauth_session_expired');
     window.dispatchEvent(event);
   }
 
-  // Add this method to allow runtime configuration updates
+
   updateSessionConfig(config) {
     CryptoUtils.vaultManager.setSessionConfig(config);
   }
@@ -90,7 +87,7 @@ class ZKAuth {
     }
   }
 
-  // Generate key pair using the secret key
+
   async generateKeyPair(secretKey) {
     try {
       return await CryptoUtils.generateKeyPair(secretKey);
@@ -99,7 +96,6 @@ class ZKAuth {
     }
   }
 
-  // Create proof using secret key and challenge
   async createProof(secretKey, challenge) {
     try {
       return await CryptoUtils.createProof(secretKey, challenge);
@@ -111,20 +107,18 @@ class ZKAuth {
   // Register with the server
   async register(apiKey, secretKey, challenge) {
     try {
-      // Generate recovery phrase and private key
+     
       const recoveryKit = await CryptoUtils.generateRecoveryKit();
       
-      // Generate key pair from private key
+  
       const keyPair = ec.keyFromPrivate(recoveryKit.privateKey);
       const publicKey = '04' + keyPair.getPublic('hex');
-      
-      // Create proof for registration
+    
       const proof = await CryptoUtils.createProofForRegistration(
         recoveryKit.privateKey, 
         challenge
       );
       
-      // Register with server
       const response = await fetch(`${this.authUrl}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,7 +134,7 @@ class ZKAuth {
         throw new Error('Registration failed');
       }
 
-      // Create vault with recovery phrase
+      
       await CryptoUtils.vaultManager.createVault(
         recoveryKit.privateKey,
         secretKey,
@@ -162,16 +156,14 @@ class ZKAuth {
   // Login with the server
   async login(apiKey, secretKey, challenge) {
     try {
-      // First unlock the vault with the secret key
+   
       const privateKey = await this.unlock(secretKey);
       
       if (!privateKey) {
         throw new Error('Failed to unlock vault');
       }
-      // Create proof using private key
+    
       const proof = await CryptoUtils.createProofForRegistration(privateKey, challenge);
-      
-      // Generate public key
       const keyPair = ec.keyFromPrivate(privateKey, 'hex');
       const publicKey = '04' + keyPair.getPublic('hex');
 
@@ -234,18 +226,14 @@ class ZKAuth {
 
   async importFromRecoveryPhrase(recoveryPhrase, newPassword) {
     try {
-      // Validate recovery phrase format
+   at
       if (!CryptoUtils.validateRecoveryPhrase(recoveryPhrase)) {
         throw new Error('Invalid recovery phrase format');
       }
 
-      // Restore account using recovery phrase
       const result = await this.recoverAccount(recoveryPhrase, newPassword);
-      
-      // Get a challenge for login verification
       const challenge = await this.getChallenge();
-      
-      // Attempt login to verify recovery worked
+     
       await this.login(this.apiKey, newPassword, challenge);
       
       return {
