@@ -5,11 +5,10 @@ import * as bip39 from 'bip39';
 import { VaultManager } from './VaultManager';
 import { Buffer } from 'buffer';
 
-// Ensure Buffer is available in browser environment
 if (typeof window !== 'undefined') {
   window.Buffer = window.Buffer || Buffer;
 }
-// Remove the try-catch block (lines 8-12) and replace with direct Buffer assignment
+
 const BufferClass = Buffer;
 
 export class CryptoUtils {
