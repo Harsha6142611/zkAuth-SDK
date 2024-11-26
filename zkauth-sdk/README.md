@@ -85,7 +85,7 @@ npm i @harsha614261/zkauth
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/ZKP-Authentication.git
+git clone https://github.com/Harsha6142611/zkAuth-SDK/tree/main/zkauth-sdk.git
 cd ZKP-Authentication
 ```
 
