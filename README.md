@@ -88,7 +88,7 @@ Check in the npmjs https://www.npmjs.com/package/@harsha614261/zkauth-sdk
 
 ```bash
 git clone https://github.com/Harsha6142611/zkAuth-SDK/tree/main/zkauth-sdk.git
-cd ZKP-Authentication
+cd zkauth-sdk
 ```
 
 ```bash
