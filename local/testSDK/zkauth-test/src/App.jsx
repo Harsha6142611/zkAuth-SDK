@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChakraProvider, Button, Input, Box, VStack, HStack, Text, Checkbox } from '@chakra-ui/react';
-// import { ZKAuthModal } from '../../../../zkauth-sdk/src/index.js';
-import { ZKAuthModal } from '@harsha614261/zkauth-sdk';
+import { ZKAuthModal } from '../../../../zkauth-sdk/src/index.js';
+// import { ZKAuthModal } from '@harsha614261/zkauth-sdk';
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [authResult, setAuthResult] = useState(null);
@@ -164,7 +164,7 @@ function App() {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onSuccess={handleAuthSuccess}
-            apiKey="harsha614261"
+            apiKey="43a9cc3c6af852f6"
             redirectUrl="http://localhost:5173/auth/user"
           />
         </div>
