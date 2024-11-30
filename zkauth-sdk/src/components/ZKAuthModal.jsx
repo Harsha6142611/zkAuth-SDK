@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -13,11 +13,11 @@ import {
   Tabs,
   Tab,
   Alert,
-  AlertIcon,
   Text,
   Box,
   useColorModeValue,
   useMediaQuery,
+  useToast,
 } from '@chakra-ui/react';
 import { ZKAuth } from '../index.js';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
@@ -29,8 +29,8 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
   const [showRecoveryPhrase, setShowRecoveryPhrase] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // const authUrl = 'http://localhost:3000/auth' ;
-  const authUrl = 'https://zk-auth-sdk-server.vercel.app/auth';
+  const authUrl = 'http://localhost:3000/auth' ;
+  // const authUrl = 'https://zk-auth-sdk-server.vercel.app/auth';
   const zkAuth = new ZKAuth({ apiKey, authUrl });
 
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -38,6 +38,72 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
   const [isSmallScreen] = useMediaQuery('(max-width: 768px)');
   const [showPassword, setShowPassword] = useState(false);
   const [showRecoveryInput, setShowRecoveryInput] = useState(false);
+  const toast = useToast();
+  const [isApiKeyValid, setIsApiKeyValid] = useState(null);
+
+  useEffect(() => {
+    const zkAuth = new ZKAuth({
+      apiKey,
+      authUrl: redirectUrl,
+      sessionConfig: {
+        timeoutDuration: 600000
+      }
+    });
+
+    // Handle API key verification
+    zkAuth.verifyApiKey()
+      .then(isValid => {
+        setIsApiKeyValid(isValid);
+        if (!isValid) {
+          toast({
+            render: () => (
+              <Box
+                color='white'
+                p={3}
+                bg='red.500'
+                borderRadius='md'
+              >
+                <Text fontWeight='bold'>Invalid API Key</Text>
+                <Text fontSize='sm'>
+                  The provided API key is invalid or inactive. Please check your credentials.
+                </Text>
+              </Box>
+            ),
+            duration: 5000,
+            isClosable: true,
+            position: "top"
+          });
+          onClose();
+        }
+      })
+      .catch(error => {
+        console.error('API key verification error:', error);
+        toast({
+          render: () => (
+            <Box
+              color='white'
+              p={3}
+              bg='red.500'
+              borderRadius='md'
+            >
+              <Text fontWeight='bold'>Verification Error</Text>
+              <Text fontSize='sm'>
+                Failed to verify API key. Please try again later.
+              </Text>
+            </Box>
+          ),
+          duration: 5000,
+          isClosable: true,
+          position: "top"
+        });
+        onClose();
+      });
+  }, [apiKey]);
+
+  // Prevent modal from opening if API key is invalid
+  if (isApiKeyValid === false) {
+    return null;
+  }
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -92,7 +158,7 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
 
   return (
     <Modal 
-      isOpen={isOpen} 
+      isOpen={isOpen && isApiKeyValid !== false} 
       onClose={onClose} 
       isCentered
       motionPreset="slideInBottom"
@@ -278,7 +344,6 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
 
               {error && (
                 <Alert status="error" borderRadius="full">
-                  <AlertIcon />
                   <Text fontSize="sm">{error}</Text>
                 </Alert>
               )}
