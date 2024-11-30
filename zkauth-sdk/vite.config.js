@@ -10,7 +10,7 @@ export default defineConfig({
       fileName: (format) => `index.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'elliptic', 'bip39', 'buffer']
+      external: ['react', 'react-dom', 'elliptic', 'bip39', 'buffer', 'mongoose']
     }
   },
   define: {
