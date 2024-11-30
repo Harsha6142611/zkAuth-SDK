@@ -4,22 +4,145 @@ const ec = new EC('secp256k1');
 import { CryptoUtils } from './utils/crypto.js';
 
 class ZKAuth {
+  static instance = null;
+  static isApiKeyVerified = false;
+
   constructor({ apiKey, authUrl, sessionConfig }) {
+    // Singleton pattern: return existing instance if already created
+    if (ZKAuth.instance) {
+      return ZKAuth.instance;
+    }
+
     this.apiKey = apiKey;
-    this.authUrl = authUrl || 'http://localhost:3000/auth';
+    this.authUrl = authUrl || 'https://zkauth-backend.vercel.app/auth';
     this.isUnlocked = false;
     this.authStateListeners = new Set();
- 
-    if (sessionConfig) {
-      CryptoUtils.vaultManager.setSessionConfig({
-        timeoutDuration: sessionConfig.timeoutDuration || 10 * 60 * 1000,
-        onSessionExpired: () => {
-          this.handleSessionExpired();
+    this.overlayId = 'zkauth-overlay';
+    
+    // Only verify API key if not already verified
+    if (!ZKAuth.isApiKeyVerified) {
+      // Create and append overlay immediately
+      this.createOverlay();
+      
+      // Verify API key before proceeding
+      this.verifyApiKey().then(({ isValid, message }) => {
+        if (!isValid) {
+          console.error('❌ API Key Error:', message);
+          this.showInvalidApiKeyPopup(message);
+        } else {
+          console.log('✅ API Key Verified:', message);
+          ZKAuth.isApiKeyVerified = true;
+          this.removeOverlay();
+          
+          // Continue with session configuration only if API key is valid
+          if (sessionConfig) {
+            CryptoUtils.vaultManager.setSessionConfig({
+              timeoutDuration: sessionConfig.timeoutDuration || 10 * 60 * 1000,
+              onSessionExpired: () => {
+                this.handleSessionExpired();
+              }
+            });
+          }
         }
+      }).catch(error => {
+        console.error('❌ API Key Verification Failed:', error.message);
+        this.showInvalidApiKeyPopup('API key verification failed. Please ensure you have a valid API key from zkAuth dashboard.');
       });
     }
-    
-    this.setupInactivityTimer();
+
+    ZKAuth.instance = this;
+    return this;
+  }
+
+  createOverlay() {
+    // Remove existing overlay if any
+    this.removeOverlay();
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = this.overlayId;
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  removeOverlay() {
+    const existingOverlay = document.getElementById(this.overlayId);
+    if (existingOverlay) {
+      existingOverlay.remove();
+    }
+  }
+
+  showInvalidApiKeyPopup(message) {
+    const overlay = document.getElementById(this.overlayId);
+    if (!overlay) return;
+
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    `;
+
+    popup.innerHTML = `
+      <h2 style="color: #e53e3e; margin-bottom: 15px;">Invalid API Key</h2>
+      <p style="color: #4a5568; margin-bottom: 20px;">${message}</p>
+      <p style="color: #718096; font-size: 14px;">Please visit 
+        <a href="https://zkauth-web.vercel.app" target="_blank" 
+           style="color: #4299e1; text-decoration: none;">
+          zkAuth Dashboard
+        </a> 
+        to obtain a valid API key
+      </p>
+    `;
+
+    overlay.appendChild(popup);
+  }
+
+  async verifyApiKey() {
+    try {
+      const response = await fetch(`${this.authUrl}/verify-api-key`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: this.apiKey
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          isValid: false,
+          message: data.message || 'Invalid API key'
+        };
+      }
+
+      return {
+        isValid: data.isValid,
+        message: data.message
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        message: 'Failed to verify API key. Please check your internet connection.'
+      };
+    }
   }
 
   setupInactivityTimer() {
@@ -107,7 +230,7 @@ class ZKAuth {
   // Register with the server
   async register(apiKey, secretKey, challenge) {
     try {
-     
+   
       const recoveryKit = await CryptoUtils.generateRecoveryKit();
       
   
