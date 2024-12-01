@@ -29,8 +29,8 @@ const ZKAuthModal = ({ isOpen, onClose, onSuccess, apiKey, redirectUrl }) => {
   const [showRecoveryPhrase, setShowRecoveryPhrase] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const authUrl = 'http://localhost:3000/auth' ;
-  // const authUrl = 'https://zk-auth-sdk-server.vercel.app/auth';
+  // const authUrl = 'http://localhost:3000/auth' ;
+  const authUrl = 'https://zk-auth-sdk-server.vercel.app/auth';
   const zkAuth = new ZKAuth({ apiKey, authUrl });
 
   const bgColor = useColorModeValue('white', 'gray.800');

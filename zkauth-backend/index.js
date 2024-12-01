@@ -16,7 +16,7 @@ const app = express();
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? config.server.cors.origins
-    : ['http://localhost:5173', 'http://localhost:3000','http://localhost:3000/auth'],
+    : ['http://localhost:5173', 'http://localhost:3000','http://localhost:3000/auth','https://zk-auth-sdk-server.vercel.app/auth','https://zk-auth-sdk-server.vercel.app'],
   methods: ['GET', 'POST'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
